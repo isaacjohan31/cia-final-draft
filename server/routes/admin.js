@@ -44,8 +44,7 @@ const updateUsersCSV = async () => {
     }
 };
 
-// Make sure to export the function for auth.js to call
-module.exports.updateUsersCSV = updateUsersCSV;
+// Export will occur at the bottom
 
 // POST /api/admin/login — Admin login with hardcoded credentials
 router.post('/login', async (req, res) => {
@@ -246,3 +245,4 @@ router.get('/students/csv', protect, authorize('admin'), async (req, res) => {
 });
 
 module.exports = router;
+module.exports.updateUsersCSV = updateUsersCSV;
