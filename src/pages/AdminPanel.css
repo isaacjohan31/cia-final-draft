@@ -395,4 +395,8 @@
     .form-row input {
         width: 100%;
     }
+
+    .table-card {
+        overflow-x: auto;
+    }
 }

@@ -106,7 +106,13 @@
 }
 
 @media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
     .footer-links-group {
         gap: 2rem;
+        flex-direction: column;
     }
 }
