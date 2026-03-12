@@ -187,6 +187,59 @@ const AdminPanel = () => {
         }
     };
 
+    const handleImportFile = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setError('');
+        setSuccess('');
+        setLoading(true);
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/admin/import', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message);
+
+            setSuccess(data.message);
+            fetchData();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+            e.target.value = ''; // Reset input
+        }
+    };
+
+    const handleExportData = async (type) => {
+        try {
+            const res = await fetch(`/api/admin/export/${type}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('Failed to export data');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `users_export_${new Date().toISOString().split('T')[0]}.${type}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
@@ -232,16 +285,29 @@ const AdminPanel = () => {
             {/* Main Content */}
             <main className="admin-main">
                 <header className="admin-header">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="mobile-header-left">
                         <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
                             <Menu size={24} />
                         </button>
-                        <h1 style={{ margin: 0 }}>User Management</h1>
                     </div>
+                    <div className="mobile-logo-text admin-logo">
+                        Admin <span>Panel</span>
+                    </div>
+                    <h1 className="desktop-header-title">User Management</h1>
                     <div className="header-actions">
-                        <button className="btn btn-secondary" onClick={handleDownloadCSV}>
-                            <Download size={18} /> Download CSV
-                        </button>
+                        <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                            <Upload size={18} /> Import
+                            <input type="file" accept=".csv, .xlsx" onChange={handleImportFile} style={{ display: 'none' }} />
+                        </label>
+                        <div className="export-dropdown">
+                            <button className="btn btn-secondary">
+                                <Download size={18} /> Export
+                            </button>
+                            <div className="dropdown-content">
+                                <button onClick={() => handleExportData('csv')}>As CSV</button>
+                                <button onClick={() => handleExportData('xlsx')}>As Excel</button>
+                            </div>
+                        </div>
                         <button className="btn btn-primary" onClick={() => setShowAddForm(!showAddForm)}>
                             <UserPlus size={18} /> Add Student
                         </button>

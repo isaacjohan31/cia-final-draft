@@ -4,6 +4,11 @@ const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
+const multer = require('multer');
+const csv = require('csv-parser');
+const xlsx = require('xlsx');
+
+const upload = multer({ dest: 'uploads/' });
 
 const router = express.Router();
 
@@ -241,6 +246,114 @@ router.get('/students/csv', protect, authorize('admin'), async (req, res) => {
     } catch (error) {
         console.error('CSV download error:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// POST /api/admin/import — Bulk import from CSV/Excel
+router.post('/import', protect, authorize('admin'), upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+        const results = [];
+        const filePath = req.file.path;
+        const extension = path.extname(req.file.originalname).toLowerCase();
+
+        if (extension === '.csv') {
+            fs.createReadStream(filePath)
+                .pipe(csv())
+                .on('data', (data) => results.push(data))
+                .on('end', () => processImport(results, res, filePath));
+        } else if (extension === '.xlsx' || extension === '.xls') {
+            const workbook = xlsx.readFile(filePath);
+            const sheetName = workbook.SheetNames[0];
+            const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+            processImport(data, res, filePath);
+        } else {
+            fs.unlinkSync(filePath);
+            res.status(400).json({ message: 'Unsupported file format' });
+        }
+    } catch (error) {
+        console.error('Import error:', error);
+        res.status(500).json({ message: 'Server error during import' });
+    }
+});
+
+const processImport = async (data, res, filePath) => {
+    try {
+        let imported = 0;
+        let skipped = 0;
+
+        for (const row of data) {
+            const name = row.Name || row.name;
+            const email = row.Email || row.email;
+            const role = (row.Role || row.role || 'student').toLowerCase();
+            const rawPassword = row.Password || row.password || Math.random().toString(36).slice(-8);
+
+            if (!name || !email) {
+                skipped++;
+                continue;
+            }
+
+            const existing = await User.findOne({ email });
+            if (existing) {
+                skipped++;
+                continue;
+            }
+
+            await User.create({
+                name,
+                email,
+                password: rawPassword,
+                role: role === 'teacher' ? 'teacher' : 'student',
+                status: 'active',
+                plainPassword: rawPassword
+            });
+            imported++;
+        }
+
+        fs.unlinkSync(filePath);
+        await updateUsersCSV();
+        res.json({ message: `Successfully imported ${imported} users. Skipped ${skipped} duplicates/invalid entries.` });
+    } catch (err) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        res.status(500).json({ message: 'Error processing data' });
+    }
+};
+
+// GET /api/admin/export/:type — Export users to CSV or Excel
+router.get('/export/:type', protect, authorize('admin'), async (req, res) => {
+    try {
+        const users = await User.find({ role: { $ne: 'admin' } }).select('-password');
+        const records = users.map(u => ({
+            Name: u.name,
+            Email: u.email,
+            Role: u.role,
+            Status: u.status,
+            DateAdded: u.createdAt.toISOString().split('T')[0]
+        }));
+
+        const type = req.params.type.toLowerCase();
+
+        if (type === 'csv') {
+            const { parse } = require('json2csv');
+            const csvData = parse(records);
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="users_export.csv"');
+            return res.send(csvData);
+        } else if (type === 'xlsx') {
+            const wb = xlsx.utils.book_new();
+            const ws = xlsx.utils.json_to_sheet(records);
+            xlsx.utils.book_append_sheet(wb, ws, "Users");
+            const buf = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename="users_export.xlsx"');
+            return res.send(buf);
+        } else {
+            res.status(400).json({ message: 'Invalid export type' });
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        res.status(500).json({ message: 'Server error during export' });
     }
 });
 

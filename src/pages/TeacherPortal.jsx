@@ -195,6 +195,9 @@ const TeacherPortal = () => {
                     <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
                         <Menu size={24} />
                     </button>
+                    <div className="mobile-logo-text">
+                        CIA <span>Portal</span>
+                    </div>
                     <div className="search-bar">
                         <Search size={20} className="search-icon" />
                         <input type="text" placeholder="Search students, assignments..." />

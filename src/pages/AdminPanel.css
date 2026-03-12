@@ -355,6 +355,28 @@
     font-size: 1rem;
 }
 
+.mobile-logo-text {
+    display: none;
+    font-size: 1.25rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff, #94a3b8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.mobile-logo-text span {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.mobile-header-left {
+    display: none;
+}
+
 /* Mobile menu toggles */
 .mobile-menu-btn {
     display: none;
@@ -391,12 +413,44 @@
 @media (max-width: 768px) {
 
     .mobile-menu-btn,
-    .close-menu-btn {
+    .close-menu-btn,
+    .mobile-logo-text,
+    .mobile-header-left {
         display: block;
+    }
+
+    .desktop-header-title {
+        display: none;
     }
 
     .admin-layout {
         flex-direction: column;
+    }
+
+    .admin-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        gap: 0;
+        margin-bottom: 20px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .header-actions .btn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    .header-actions .btn span,
+    .header-actions .btn svg+span {
+        display: none;
+        /* Hide text on small buttons in mobile header */
     }
 
     .mobile-overlay {
