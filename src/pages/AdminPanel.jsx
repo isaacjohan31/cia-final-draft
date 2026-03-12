@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, Download, Trash2, Edit3, X, Check, LogOut, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { Users, UserPlus, Download, Trash2, Edit3, X, Check, LogOut, Shield, CheckCircle, XCircle, Menu, BarChart3, Settings } from 'lucide-react';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -14,6 +14,7 @@ const AdminPanel = () => {
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(true);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('students');
     const navigate = useNavigate();
 
     const token = localStorage.getItem('adminToken');
@@ -240,6 +241,28 @@ const AdminPanel = () => {
         }
     };
 
+    const handleExportUser = async (id, name, type) => {
+        try {
+            const res = await fetch(`/api/admin/export-user/${id}/${type}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('Failed to export user data');
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name.replace(/\s+/g, '_')}_data.${type}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
@@ -268,10 +291,34 @@ const AdminPanel = () => {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <a href="#" className="nav-item active">
+                    <button
+                        onClick={() => { setActiveTab('students'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'students' ? 'active' : ''}`}
+                    >
                         <Users size={20} />
                         <span>Students</span>
-                    </a>
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('teachers'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'teachers' ? 'active' : ''}`}
+                    >
+                        <Shield size={20} />
+                        <span>Teachers</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('analytics'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+                    >
+                        <BarChart3 size={20} />
+                        <span>Analytics</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                    >
+                        <Settings size={20} />
+                        <span>Settings</span>
+                    </button>
                 </nav>
 
                 <div className="sidebar-footer">
@@ -453,6 +500,15 @@ const AdminPanel = () => {
                                                     <button className="icon-btn edit" onClick={() => handleEditStart(student)} title="Edit">
                                                         <Edit3 size={16} />
                                                     </button>
+                                                    <div className="export-dropdown">
+                                                        <button className="icon-btn" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }} title="Export User">
+                                                            <Download size={16} />
+                                                        </button>
+                                                        <div className="dropdown-content">
+                                                            <button onClick={() => handleExportUser(student._id, student.name, 'csv')}>As CSV</button>
+                                                            <button onClick={() => handleExportUser(student._id, student.name, 'xlsx')}>As Excel</button>
+                                                        </div>
+                                                    </div>
                                                     <button className="icon-btn delete" onClick={() => handleDeleteStudent(student._id)} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
@@ -465,8 +521,8 @@ const AdminPanel = () => {
                         </table>
                     )}
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 };
 

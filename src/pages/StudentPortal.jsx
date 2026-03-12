@@ -8,6 +8,7 @@ const StudentPortal = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('dashboard');
     const navigate = useNavigate();
 
     const token = localStorage.getItem('token');
@@ -95,22 +96,34 @@ const StudentPortal = () => {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <a href="#" className="nav-item active">
+                    <button
+                        onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+                    >
                         <BookOpen size={20} />
                         <span>Dashboard</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('courses'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'courses' ? 'active' : ''}`}
+                    >
                         <GraduationCap size={20} />
                         <span>My Courses</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('schedule'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'schedule' ? 'active' : ''}`}
+                    >
                         <Calendar size={20} />
                         <span>Schedule</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                    >
                         <Settings size={20} />
                         <span>Settings</span>
-                    </a>
+                    </button>
                 </nav>
 
                 <div className="sidebar-footer">
@@ -149,67 +162,76 @@ const StudentPortal = () => {
                 </header>
 
                 <div className="dashboard-content">
-                    <div className="dashboard-header">
-                        <h1>Welcome back, {user.name || 'Student'}!</h1>
-                        <p>Browse and download files shared by your teachers.</p>
-                    </div>
+                    {activeTab === 'dashboard' ? (
+                        <>
+                            <div className="dashboard-header">
+                                <h1>Welcome back, {user.name || 'Student'}!</h1>
+                                <p>Browse and download files shared by your teachers.</p>
+                            </div>
 
-                    {error && <div className="alert alert-error">{error}</div>}
+                            {error && <div className="alert alert-error">{error}</div>}
 
-                    {/* Stats */}
-                    <div className="stats-grid">
-                        <div className="stat-card">
-                            <h3>Available Files</h3>
-                            <div className="stat-value">{files.length}</div>
-                            <span className="stat-trend neutral">From your teachers</span>
-                        </div>
-                        <div className="stat-card">
-                            <h3>Total Size</h3>
-                            <div className="stat-value">{formatSize(files.reduce((a, f) => a + f.size, 0))}</div>
-                            <span className="stat-trend neutral">All shared files</span>
-                        </div>
-                    </div>
-
-                    {/* Files list */}
-                    <div className="activity-section">
-                        <h2>Shared Files</h2>
-                        <div className="activity-card">
-                            {loading ? (
-                                <div className="empty-state">
-                                    <p>Loading files...</p>
+                            {/* Stats */}
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <h3>Available Files</h3>
+                                    <div className="stat-value">{files.length}</div>
+                                    <span className="stat-trend neutral">From your teachers</span>
                                 </div>
-                            ) : files.length === 0 ? (
-                                <div className="empty-state">
-                                    <p>No files shared by teachers yet.</p>
+                                <div className="stat-card">
+                                    <h3>Total Size</h3>
+                                    <div className="stat-value">{formatSize(files.reduce((a, f) => a + f.size, 0))}</div>
+                                    <span className="stat-trend neutral">All shared files</span>
                                 </div>
-                            ) : (
-                                <div className="files-list">
-                                    {files.map((file) => (
-                                        <div key={file._id} className="file-item">
-                                            <div className="file-icon">
-                                                <FileText size={20} />
-                                            </div>
-                                            <div className="file-info">
-                                                <span className="file-name">{file.originalName}</span>
-                                                <span className="file-meta">
-                                                    {formatSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
-                                                    {file.uploadedBy && ` • by ${file.uploadedBy.name}`}
-                                                </span>
-                                            </div>
-                                            <button
-                                                className="download-btn"
-                                                onClick={() => handleDownload(file._id, file.originalName)}
-                                                title="Download file"
-                                            >
-                                                <Download size={16} />
-                                                <span>Download</span>
-                                            </button>
+                            </div>
+
+                            {/* Files list */}
+                            <div className="activity-section">
+                                <h2>Shared Files</h2>
+                                <div className="activity-card">
+                                    {loading ? (
+                                        <div className="empty-state">
+                                            <p>Loading files...</p>
                                         </div>
-                                    ))}
+                                    ) : files.length === 0 ? (
+                                        <div className="empty-state">
+                                            <p>No files shared by teachers yet.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="files-list">
+                                            {files.map((file) => (
+                                                <div key={file._id} className="file-item">
+                                                    <div className="file-icon">
+                                                        <FileText size={20} />
+                                                    </div>
+                                                    <div className="file-info">
+                                                        <span className="file-name">{file.originalName}</span>
+                                                        <span className="file-meta">
+                                                            {formatSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
+                                                            {file.uploadedBy && ` • by ${file.uploadedBy.name}`}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        className="download-btn"
+                                                        onClick={() => handleDownload(file._id, file.originalName)}
+                                                        title="Download file"
+                                                    >
+                                                        <Download size={16} />
+                                                        <span>Download</span>
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="empty-state" style={{ padding: '60px', opacity: 0.6 }}>
+                            <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
+                            <p>This section is currently under development. Please check back later.</p>
                         </div>
-                    </div>
+                    )}
                 </div>
             </main>
         </div>

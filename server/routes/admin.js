@@ -357,5 +357,44 @@ router.get('/export/:type', protect, authorize('admin'), async (req, res) => {
     }
 });
 
+// GET /api/admin/export-user/:id/:type — Export single user to CSV or Excel
+router.get('/export-user/:id/:type', protect, authorize('admin'), async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password');
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const record = {
+            Name: user.name,
+            Email: user.email,
+            Role: user.role,
+            Status: user.status,
+            DateAdded: user.createdAt ? user.createdAt.toISOString().split('T')[0] : 'N/A'
+        };
+
+        const type = req.params.type.toLowerCase();
+
+        if (type === 'csv') {
+            const { parse } = require('json2csv');
+            const csvData = parse([record]);
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', `attachment; filename="${user.name}_data.csv"`);
+            return res.send(csvData);
+        } else if (type === 'xlsx') {
+            const wb = xlsx.utils.book_new();
+            const ws = xlsx.utils.json_to_sheet([record]);
+            xlsx.utils.book_append_sheet(wb, ws, "UserData");
+            const buf = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', `attachment; filename="${user.name}_data.xlsx"`);
+            return res.send(buf);
+        } else {
+            res.status(400).json({ message: 'Invalid export type' });
+        }
+    } catch (error) {
+        console.error('Single export error:', error);
+        res.status(500).json({ message: 'Server error during export' });
+    }
+});
+
 module.exports = router;
 module.exports.updateUsersCSV = updateUsersCSV;

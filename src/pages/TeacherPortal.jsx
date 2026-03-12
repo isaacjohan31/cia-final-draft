@@ -10,6 +10,7 @@ const TeacherPortal = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('dashboard');
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
@@ -157,22 +158,34 @@ const TeacherPortal = () => {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <a href="#" className="nav-item active">
+                    <button
+                        onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+                    >
                         <BookOpen size={20} />
                         <span>Dashboard</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('classes'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'classes' ? 'active' : ''}`}
+                    >
                         <Users size={20} />
                         <span>My Classes</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('analytics'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+                    >
                         <BarChart3 size={20} />
                         <span>Analytics</span>
-                    </a>
-                    <a href="#" className="nav-item">
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                    >
                         <Settings size={20} />
                         <span>Settings</span>
-                    </a>
+                    </button>
                 </nav>
 
                 <div className="sidebar-footer">
@@ -211,80 +224,89 @@ const TeacherPortal = () => {
                 </header>
 
                 <div className="dashboard-content">
-                    <div className="dashboard-header">
-                        <h1>Welcome back, {user.name || 'Teacher'}!</h1>
-                        <p>Upload files for your students and manage your resources.</p>
-                    </div>
+                    {activeTab === 'dashboard' ? (
+                        <>
+                            <div className="dashboard-header">
+                                <h1>Welcome back, {user.name || 'Teacher'}!</h1>
+                                <p>Upload files for your students and manage your resources.</p>
+                            </div>
 
-                    {error && <div className="alert alert-error">{error}</div>}
-                    {success && <div className="alert alert-success">{success}</div>}
+                            {error && <div className="alert alert-error">{error}</div>}
+                            {success && <div className="alert alert-success">{success}</div>}
 
-                    {/* Upload area */}
-                    <div
-                        className={`upload-zone ${dragActive ? 'drag-active' : ''}`}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <Upload size={40} />
-                        <h3>{uploading ? 'Uploading...' : 'Drop a file here or click to browse'}</h3>
-                        <p>Max file size: 50 MB</p>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileInput}
-                            style={{ display: 'none' }}
-                        />
-                    </div>
+                            {/* Upload area */}
+                            <div
+                                className={`upload-zone ${dragActive ? 'drag-active' : ''}`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <Upload size={40} />
+                                <h3>{uploading ? 'Uploading...' : 'Drop a file here or click to browse'}</h3>
+                                <p>Max file size: 50 MB</p>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileInput}
+                                    style={{ display: 'none' }}
+                                />
+                            </div>
 
-                    {/* Stats */}
-                    <div className="stats-grid">
-                        <div className="stat-card">
-                            <h3>Files Uploaded</h3>
-                            <div className="stat-value">{files.length}</div>
-                        </div>
-                        <div className="stat-card">
-                            <h3>Total Size</h3>
-                            <div className="stat-value">{formatSize(files.reduce((a, f) => a + f.size, 0))}</div>
-                        </div>
-                    </div>
-
-                    {/* Files list */}
-                    <div className="activity-section">
-                        <h2>Uploaded Files</h2>
-                        <div className="activity-card">
-                            {files.length === 0 ? (
-                                <div className="empty-state">
-                                    <p>No files uploaded yet. Upload your first file above!</p>
+                            {/* Stats */}
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <h3>Files Uploaded</h3>
+                                    <div className="stat-value">{files.length}</div>
                                 </div>
-                            ) : (
-                                <div className="files-list">
-                                    {files.map((file) => (
-                                        <div key={file._id} className="file-item">
-                                            <div className="file-icon">
-                                                <FileText size={20} />
-                                            </div>
-                                            <div className="file-info">
-                                                <span className="file-name">{file.originalName}</span>
-                                                <span className="file-meta">
-                                                    {formatSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <button
-                                                className="delete-btn"
-                                                onClick={() => handleDelete(file._id)}
-                                                title="Delete file"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                <div className="stat-card">
+                                    <h3>Total Size</h3>
+                                    <div className="stat-value">{formatSize(files.reduce((a, f) => a + f.size, 0))}</div>
+                                </div>
+                            </div>
+
+                            {/* Files list */}
+                            <div className="activity-section">
+                                <h2>Uploaded Files</h2>
+                                <div className="activity-card">
+                                    {files.length === 0 ? (
+                                        <div className="empty-state">
+                                            <p>No files uploaded yet. Upload your first file above!</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        <div className="files-list">
+                                            {files.map((file) => (
+                                                <div key={file._id} className="file-item">
+                                                    <div className="file-icon">
+                                                        <FileText size={20} />
+                                                    </div>
+                                                    <div className="file-info">
+                                                        <span className="file-name">{file.originalName}</span>
+                                                        <span className="file-meta">
+                                                            {formatSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        className="delete-btn"
+                                                        onClick={() => handleDelete(file._id)}
+                                                        title="Delete file"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="empty-state" style={{ padding: '60px', opacity: 0.6 }}>
+                            <h2>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Module</h2>
+                            <p>This section is currently under development. Please check back later.</p>
                         </div>
-                    </div>
+                    )}
                 </div>
             </main>
         </div>
