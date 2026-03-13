@@ -1,3 +1,12 @@
 {
-    "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
 }

@@ -40,7 +40,13 @@ const LoginPage = () => {
                 body: JSON.stringify(body)
             });
 
-            const data = await res.json();
+            let data;
+            try {
+                data = await res.json();
+            } catch (parseErr) {
+                // if response is empty or not JSON the error will occur
+                throw new Error('Received invalid response from server');
+            }
 
             if (!res.ok) {
                 if (res.status === 403) {
