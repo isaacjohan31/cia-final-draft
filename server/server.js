@@ -30,6 +30,7 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/files', require('./routes/files'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/assessments', require('./routes/assessments'));
 
 // Health check
 app.get('/api/health', (req, res) => {

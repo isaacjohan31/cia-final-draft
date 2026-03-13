@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TeacherPortal.css';
-import { BookOpen, Users, BarChart3, Settings, Bell, Search, Upload, Trash2, FileText, LogOut, Menu, X } from 'lucide-react';
+import { BookOpen, Users, BarChart3, Settings, Bell, Search, Upload, Trash2, FileText, LogOut, Menu, X, FileQuestion, Plus, Clock, Play } from 'lucide-react';
+import CreateAssessment from '../components/CreateAssessment';
 
 const TeacherPortal = () => {
     const [files, setFiles] = useState([]);
@@ -11,6 +12,9 @@ const TeacherPortal = () => {
     const [success, setSuccess] = useState('');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [assessments, setAssessments] = useState([]);
+    const [loadingAssessments, setLoadingAssessments] = useState(false);
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
 
@@ -23,7 +27,23 @@ const TeacherPortal = () => {
             return;
         }
         fetchFiles();
+        fetchAssessments();
     }, []);
+
+    const fetchAssessments = async () => {
+        setLoadingAssessments(true);
+        try {
+            const res = await fetch('/api/assessments/teacher', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setAssessments(data);
+        } catch (err) {
+            console.error('Failed to load assessments');
+        } finally {
+            setLoadingAssessments(false);
+        }
+    };
 
     const fetchFiles = async () => {
         try {
@@ -137,6 +157,39 @@ const TeacherPortal = () => {
         navigate('/login');
     };
 
+    const handleSaveAssessment = async (assessmentData) => {
+        try {
+            const res = await fetch('/api/assessments', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(assessmentData)
+            });
+            if (!res.ok) throw new Error('Failed to save assessment');
+            setSuccess('Assessment created successfully!');
+            setShowCreateModal(false);
+            fetchAssessments();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const handlePublish = async (id) => {
+        try {
+            const res = await fetch(`/api/assessments/publish/${id}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to publish');
+            setSuccess('Assessment published!');
+            fetchAssessments();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     const toggleMobileMenu = () => {
         setMobileMenuOpen(!mobileMenuOpen);
     };
@@ -178,6 +231,13 @@ const TeacherPortal = () => {
                     >
                         <BarChart3 size={20} />
                         <span>Analytics</span>
+                    </button>
+                    <button
+                        onClick={() => { setActiveTab('assessments'); setMobileMenuOpen(false); }}
+                        className={`nav-item ${activeTab === 'assessments' ? 'active' : ''}`}
+                    >
+                        <FileQuestion size={20} />
+                        <span>Assessments</span>
                     </button>
                     <button
                         onClick={() => { setActiveTab('settings'); setMobileMenuOpen(false); }}
@@ -224,8 +284,77 @@ const TeacherPortal = () => {
                 </header>
 
                 <div className="dashboard-content">
-                    {activeTab === 'dashboard' ? (
+                    {activeTab === 'assessments' ? (
+                        <div className="assessments-section">
+                            <div className="section-header">
+                                <div>
+                                    <h1>Assessments</h1>
+                                    <p>Create and manage your exams and assignments.</p>
+                                </div>
+                                <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                                    <Plus size={18} /> Create New
+                                </button>
+                            </div>
+
+                            {error && <div className="alert alert-error">{error}</div>}
+                            {success && <div className="alert alert-success">{success}</div>}
+
+                            {loadingAssessments ? (
+                                <div className="loading-state">Loading assessments...</div>
+                            ) : assessments.length === 0 ? (
+                                <div className="empty-state">
+                                    <FileQuestion size={48} />
+                                    <p>No assessments created yet. Start by creating your first one!</p>
+                                    <button className="btn btn-primary" onClick={() => setShowCreateModal(true)}>
+                                        Create Assessment
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="assessments-grid">
+                                    {assessments.map((asmt) => (
+                                        <div key={asmt._id} className="assessment-card">
+                                            <div className="asmt-header">
+                                                <span className={`asmt-status ${asmt.status}`}>{asmt.status}</span>
+                                                <span className="asmt-date">{new Date(asmt.createdAt).toLocaleDateString()}</span>
+                                            </div>
+                                            <h3>{asmt.title}</h3>
+                                            <p>{asmt.description || 'No description provided.'}</p>
+                                            <div className="asmt-stats">
+                                                <div className="asmt-stat">
+                                                    <FileQuestion size={16} />
+                                                    <span>{asmt.questions.length} Questions</span>
+                                                </div>
+                                                <div className="asmt-stat">
+                                                    <Clock size={16} />
+                                                    <span>{asmt.duration} Mins</span>
+                                                </div>
+                                            </div>
+                                            <div className="asmt-footer">
+                                                <span className="asmt-marks">{asmt.totalMarks} Marks</span>
+                                                <div className="asmt-actions">
+                                                    {asmt.status === 'draft' && (
+                                                        <button className="btn-small btn-publish" onClick={() => handlePublish(asmt._id)}>
+                                                            Publish
+                                                        </button>
+                                                    )}
+                                                    <button className="btn-small btn-view">View Results</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {showCreateModal && (
+                                <CreateAssessment 
+                                    onSave={handleSaveAssessment} 
+                                    onCancel={() => setShowCreateModal(false)} 
+                                />
+                            )}
+                        </div>
+                    ) : activeTab === 'dashboard' ? (
                         <>
+                            {/* ... existing dashboard content ... */}
                             <div className="dashboard-header">
                                 <h1>Welcome back, {user.name || 'Teacher'}!</h1>
                                 <p>Upload files for your students and manage your resources.</p>
@@ -261,8 +390,8 @@ const TeacherPortal = () => {
                                     <div className="stat-value">{files.length}</div>
                                 </div>
                                 <div className="stat-card">
-                                    <h3>Total Size</h3>
-                                    <div className="stat-value">{formatSize(files.reduce((a, f) => a + f.size, 0))}</div>
+                                    <h3>Active Assessments</h3>
+                                    <div className="stat-value">{assessments.filter(a => a.status === 'published').length}</div>
                                 </div>
                             </div>
 
